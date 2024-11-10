@@ -1,27 +1,16 @@
-# Especificamos la imagen base que se va a usar 
 FROM debian:bullseye
 
-# Especificamos la ruta del directorio de trabajo
-WORKDIR /mariadb
+# Update, install MariaDB, and clean up cache
+RUN apt update && apt install -y mariadb-server && rm -rf /var/lib/apt/lists/*
 
-# Actualizamos dependencias y instalamos MariaDB en una sola línea
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y mariadb-server && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# Copy the configuration script to the container
+COPY ./conf/mdb_conf.sh /mdb_conf.sh
 
-# Copiamos todos los archivos al contenedor
-COPY . .
+# Grant execution permissions to the script
+RUN chmod +x /mdb_conf.sh
 
-# Exponemos el puerto 3306 para MariaDB
+# Expose MariaDB port
 EXPOSE 3306
 
-# Aseguramos que el script de configuración tenga permisos de ejecución
-RUN chmod +x mdb-conf.sh
-
-# Usar un usuario no root (opcional)
-# RUN useradd -r -s /bin/false mariadbuser
-# USER mariadbuser
-
-# El comando por defecto será el script de configuración
-CMD ["bash", "mdb-conf.sh"]
+# Use an absolute path in ENTRYPOINT
+ENTRYPOINT ["/mdb_conf.sh"]
